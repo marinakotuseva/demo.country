@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.iteranet.Entity.Country;
+import ru.iteranet.Exceptions.NotFoundException;
 import ru.iteranet.Repo.CountryRepository;
 
 import java.util.List;
@@ -32,6 +33,17 @@ public class CountryRepositoryTest {
         assertEquals("Россия", countries.get(0).getName());
         assertEquals("Бразилия", countries.get(1).getName());
         assertEquals("Франция", countries.get(2).getName());
+
+    }
+
+
+    @Test
+    public void can_find_country_by_id() {
+
+        Country country = repository
+                .findById((long)1)
+                .orElseThrow(() -> new NotFoundException(1));
+        assertEquals("Россия", country.getName());
 
     }
 
