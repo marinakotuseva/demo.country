@@ -1,6 +1,7 @@
 package ru.iteranet.Entity;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name="countries")
@@ -11,6 +12,7 @@ public class Country {
     public long id;
 
     @Column(length=255,unique=true)
+    @NotNull
     private String name;
 
 
