@@ -96,11 +96,11 @@ public class CountryControllerTest {
 
         testRestTemplate.delete(url, id);
 
-//        ResponseEntity<Integer> result = testRestTemplate.exchange(url,
-//                HttpMethod.DELETE,
-//                HttpEntity.EMPTY,
-//                Integer.class,
-//                id);
+        ResponseEntity<Integer> result = testRestTemplate.exchange(url,
+                HttpMethod.DELETE,
+                HttpEntity.EMPTY,
+                Integer.class,
+                id);
 
         //assertThat(result.getBody(), equalTo(2));
 
