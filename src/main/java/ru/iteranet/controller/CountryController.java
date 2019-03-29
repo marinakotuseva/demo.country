@@ -1,36 +1,43 @@
-package ru.iteranet.Controller;
+package ru.iteranet.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.iteranet.Entity.Country;
-import ru.iteranet.Exceptions.NameNotFoundException;
-import ru.iteranet.Exceptions.RecordAlreadyExistsException;
-import ru.iteranet.Exceptions.RecordNotFoundException;
-import ru.iteranet.Repo.CountryRepository;
+import ru.iteranet.entity.Country;
+import ru.iteranet.exceptions.NameNotFoundException;
+import ru.iteranet.exceptions.RecordAlreadyExistsException;
+import ru.iteranet.exceptions.RecordNotFoundException;
+import ru.iteranet.repo.CountryRepository;
 
 import java.util.List;
 
 @RestController
+@RequestMapping(path = "/api")
 public class CountryController {
 
     @Autowired
     private CountryRepository repository;
 
-    @GetMapping("/api/country")
-    public List<Country> findAll() {
-        return repository.findAll();
+    @GetMapping("/country")
+    public List<Country> findAll(@RequestParam(required = false) String name) {
+        System.out.println(name);
+        if (name == null){
+            return repository.findAll();
+        } else {
+            List<Country> loadedCountries = repository.findByName(name);
+            return loadedCountries;
+        }
     }
 
-    @GetMapping("/api/country/{id}")
+    @GetMapping("/country/{id}")
     public Country findOne(@PathVariable Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
     }
 
-    @PostMapping("/api/country")
+    @PostMapping("/country")
     public Country create(@RequestBody Country country) {
         String name = country.getName();
-        if (name == null) {
+        if (name == null || name == "") {
             throw new NameNotFoundException();
         }
         List<Country> existingCountries = repository.findByName(name);
@@ -41,7 +48,7 @@ public class CountryController {
     }
 
     // Save or update
-    @PutMapping("/api/country/{id}")
+    @PutMapping("/country/{id}")
     public Country saveOrUpdate(@RequestBody Country country, @PathVariable Long id) {
         Country existingCountry = repository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
@@ -52,7 +59,7 @@ public class CountryController {
         return existingCountry;
     }
 
-    @DeleteMapping("/api/country/{id}")
+    @DeleteMapping("/country/{id}")
     public void delete(@PathVariable Long id) {
         Country existingCountry = repository
                 .findById(id)

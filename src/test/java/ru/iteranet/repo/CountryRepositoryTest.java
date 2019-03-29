@@ -1,18 +1,18 @@
-package ru.iteranet.Repo;
+package ru.iteranet.repo;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import ru.iteranet.Entity.Country;
-import ru.iteranet.Exceptions.RecordAlreadyExistsException;
-import ru.iteranet.Exceptions.RecordNotFoundException;
-import ru.iteranet.Repo.CountryRepository;
+import ru.iteranet.entity.Country;
+import ru.iteranet.exceptions.RecordAlreadyExistsException;
+import ru.iteranet.exceptions.RecordNotFoundException;
 
 import java.util.List;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
@@ -26,11 +26,10 @@ public class CountryRepositoryTest {
     public void testReadCountries() {
 
         List<Country> countries = repository.findAll();
-        assertEquals(3, countries.size());
-        assertEquals("Россия", countries.get(0).getName());
-        assertEquals("Бразилия", countries.get(1).getName());
-        assertEquals("Франция", countries.get(2).getName());
-
+        assertThat(countries.size(), equalTo(3));
+        assertThat(countries.get(0).getName(), equalTo("Россия"));
+        assertThat(countries.get(1).getName(), equalTo("Бразилия"));
+        assertThat(countries.get(2).getName(), equalTo("Франция"));
     }
 
 
@@ -41,7 +40,7 @@ public class CountryRepositoryTest {
                 .findById((long)id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
 
-        assertEquals("Россия", country.getName());
+        assertThat(country.getName(), equalTo("Россия"));
 
     }
 
@@ -49,7 +48,9 @@ public class CountryRepositoryTest {
     public void testCreateCountry() {
 
         List<Country> countries = repository.findAll();
-        assertEquals(3, countries.size());
+        List<Country> emptyList = repository.findByName("Абхазия");
+        assertThat(countries.size(), equalTo(3));
+        assertThat(emptyList.size(), equalTo(0));
 
         Country country = new Country("Абхазия");
         List<Country> existingCountry = repository.findByName(country.getName());
@@ -59,7 +60,7 @@ public class CountryRepositoryTest {
         repository.save(country);
 
         List<Country> countriesAfterAdding = repository.findAll();
-        assertEquals(4, countriesAfterAdding.size());
+        assertThat(countriesAfterAdding.size(), equalTo(4));
 
     }
 
@@ -67,12 +68,12 @@ public class CountryRepositoryTest {
     public void testDeleteCountry() {
 
         List<Country> countries = repository.findAll();
-        assertEquals(3, countries.size());
+        assertThat(countries.size(), equalTo(3));
 
         repository.delete(repository.findAll().get(2));
 
         List<Country> countriesAfterDeletion = repository.findAll();
-        assertEquals(2, countriesAfterDeletion.size());
+        assertThat(countriesAfterDeletion.size(), equalTo(2));
 
     }
 
@@ -80,15 +81,15 @@ public class CountryRepositoryTest {
     public void testUpdateCountry() {
 
         List<Country> countries = repository.findAll();
-        assertEquals(3, countries.size());
+        assertThat(countries.size(), equalTo(3));
 
         Country country = repository.findAll().get(0);
         country.setName("Страна 1");
 
         List<Country> countriesAfterEditing = repository.findAll();
-        assertEquals(3, countriesAfterEditing.size());
+        assertThat(countriesAfterEditing.size(), equalTo(3));
 
-        assertEquals("Страна 1", countriesAfterEditing.get(0).getName());
+        assertThat(countriesAfterEditing.get(0).getName(), equalTo("Страна 1"));
 
     }
 
@@ -97,7 +98,7 @@ public class CountryRepositoryTest {
 
         List<Country> countriesRussia = repository.findByName("Россия");
 
-        assertEquals(1, countriesRussia.size());
-        assertEquals("Россия", countriesRussia.get(0).getName());
+        assertThat(countriesRussia.size(), equalTo(1));
+        assertThat(countriesRussia.get(0).getName(), equalTo("Россия"));
     }
 }

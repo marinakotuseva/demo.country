@@ -1,4 +1,4 @@
-package ru.iteranet.Entity;
+package ru.iteranet.entity;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
