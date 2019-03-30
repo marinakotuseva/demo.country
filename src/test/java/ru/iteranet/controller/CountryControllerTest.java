@@ -2,8 +2,10 @@ package ru.iteranet.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -21,6 +23,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class CountryControllerTest {
     @Autowired
     private TestRestTemplate testRestTemplate;
@@ -38,7 +41,7 @@ public class CountryControllerTest {
         }.getType();
         List<Country> countryList = new Gson().fromJson(response.getBody(), listType);
 
-        assertThat(countryList, hasSize(3));
+        assertThat(countryList, hasSize(4));
 
         Country country1 = countryList.get(0);
         assertThat(country1.getName(), equalTo("Россия"));
@@ -134,10 +137,18 @@ public class CountryControllerTest {
     public void testDeleteCountry() {
 
         long id = 3;
+        int initialAmount;
 
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ id, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
+        // Current amount
+        ResponseEntity<String> responseGetAll = testRestTemplate.getForEntity("/api/country", String.class);
+        Type listType = new TypeToken<ArrayList<Country>>() {
+        }.getType();
+        List<Country> countryList = new Gson().fromJson(responseGetAll.getBody(), listType);
+        initialAmount = countryList.size();
+
 
         // Delete country
         ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+id,
@@ -155,7 +166,7 @@ public class CountryControllerTest {
         }.getType();
         List<Country> countryListAfterDeletion = new Gson().fromJson(responseAfterDeletion.getBody(), listType2);
 
-        assertThat(countryListAfterDeletion, hasSize(2));
+        assertThat(countryListAfterDeletion, hasSize(initialAmount-1));
 
     }
 
