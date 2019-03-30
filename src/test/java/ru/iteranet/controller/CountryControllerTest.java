@@ -73,7 +73,7 @@ public class CountryControllerTest {
     }
     @Test
     public void testCreateCountry(){
-        String url = "http://localhost:8080/api/country?name=";
+        String url = site+"/api/country?name=";
         String countryName = "Абхазия";
 
         // Check that this country do not exists
@@ -106,7 +106,7 @@ public class CountryControllerTest {
 
     @Test
     public void testCantCreateEmptyCountry(){
-        String url = "http://localhost:8080/api/country?name=";
+        String url = site+"/api/country?name=";
         String countryName = "";
 
         // Create new country
