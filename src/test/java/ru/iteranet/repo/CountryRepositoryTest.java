@@ -8,11 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.iteranet.entity.Country;
-import ru.iteranet.exceptions.RecordAlreadyExistsException;
 import ru.iteranet.exceptions.RecordNotFoundException;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -24,13 +22,15 @@ import static org.hamcrest.core.IsNull.notNullValue;
 public class CountryRepositoryTest {
 
     @Autowired
-    private CountryRepository repository;
+    private CountryRepository countryRepository;
+    private String countryToCreate = "Абхазия_fsdfsdfsdfsd";
+    private String countryToDelete = "Грузия_ыаываывпв";
 
 
     @Test
     public void testReadCountries() {
 
-        List<Country> countries = repository.findAll();
+        List<Country> countries = countryRepository.findAll();
         assertThat(countries.size(), equalTo(3));
         assertThat(countries.get(0).getName(), equalTo("Россия"));
         assertThat(countries.get(1).getName(), equalTo("Бразилия"));
@@ -41,7 +41,7 @@ public class CountryRepositoryTest {
     @Test
     public void testFindCountryByID() {
         long id = 1;
-        Country country = repository
+        Country country = countryRepository
                 .findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
 
@@ -51,18 +51,20 @@ public class CountryRepositoryTest {
 
     @Test
     public void testCreateCountry() {
-        String countryToCreate = "Абхазия_fsdfsdfsdfsd";
 
-        List<Country> countries = repository.findAll();
-        Country nullCountry = repository.findByName(countryToCreate);
+        // Check that this country not exists
+        List<Country> countries = countryRepository.findAll();
+        Country nullCountry = countryRepository.findByName(countryToCreate);
         assertThat(countries.size(), equalTo(3));
         assertThat(nullCountry, equalTo(null));
 
+        // Add country
         Country country = new Country(countryToCreate);
-        repository.save(country);
+        countryRepository.save(country);
 
-        List<Country> countriesAfterAdding = repository.findAll();
-        Country createdCountry = repository.findByName(countryToCreate);
+        // Check that now exists
+        List<Country> countriesAfterAdding = countryRepository.findAll();
+        Country createdCountry = countryRepository.findByName(countryToCreate);
         assertThat(countriesAfterAdding.size(), equalTo(4));
         assertThat(createdCountry, notNullValue());
     }
@@ -70,19 +72,17 @@ public class CountryRepositoryTest {
     @Test(expected = RecordNotFoundException.class)
     public void testDeleteCountry() {
 
-        String countryToDelete = "Грузия_ыаываывпв";
-
         // Create country to delete
         Country country = new Country(countryToDelete);
-        repository.save(country);
-        Country createdCountry = repository.findByName(countryToDelete);
+        countryRepository.save(country);
+        Country createdCountry = countryRepository.findByName(countryToDelete);
         assertThat(createdCountry, notNullValue());
 
         // Delete
-        repository.delete(createdCountry);
+        countryRepository.delete(createdCountry);
 
         // Check that no longer exists
-        Country deletedCountry = repository
+        Country deletedCountry = countryRepository
                 .findById(createdCountry.getId())
                 .orElseThrow(() -> new RecordNotFoundException(createdCountry.getId()));
     }
@@ -90,13 +90,16 @@ public class CountryRepositoryTest {
     @Test
     public void testUpdateCountry() {
 
-        List<Country> countries = repository.findAll();
+        // Get initial size
+        List<Country> countries = countryRepository.findAll();
         assertThat(countries.size(), equalTo(3));
 
-        Country country = repository.findAll().get(0);
+        // Update
+        Country country = countryRepository.findAll().get(0);
         country.setName("Страна 1");
 
-        List<Country> countriesAfterEditing = repository.findAll();
+        // Check that amount not changed but name changed
+        List<Country> countriesAfterEditing = countryRepository.findAll();
         assertThat(countriesAfterEditing.size(), equalTo(3));
 
         assertThat(countriesAfterEditing.get(0).getName(), equalTo("Страна 1"));
@@ -106,7 +109,7 @@ public class CountryRepositoryTest {
     @Test
     public void testFindCountryByName() {
 
-        Country russiaCountry = repository.findByName("Россия");
+        Country russiaCountry = countryRepository.findByName("Россия");
 
         assertThat(russiaCountry, notNullValue());
         assertThat(russiaCountry.getName(), equalTo("Россия"));

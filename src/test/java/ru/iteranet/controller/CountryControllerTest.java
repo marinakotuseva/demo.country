@@ -33,6 +33,9 @@ public class CountryControllerTest {
     private String countryToDelete = "Грузия_ыаываывпв";
     private String countryToCreate = "Абхазия_fsdfsdfsdfsd";
     private String countryCantCreateTwoTimes = "Абхазия_fsdfsdfsdfsd";
+    private long nonExistingID = 0;
+    private long existingID = 1;
+    private String emptyCountryName = "";
 
     @Test
     public void testReadCountries(){
@@ -55,9 +58,7 @@ public class CountryControllerTest {
     @Test
     public void testFindCountryByID() {
 
-        long id = 1;
-
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ id, String.class);
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ existingID, String.class);
 
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
 
@@ -71,9 +72,7 @@ public class CountryControllerTest {
     @Test
     public void testCantFindNonExistingCountryByID() {
 
-        long id = 10;
-
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ id, String.class);
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ nonExistingID, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
     }
@@ -113,10 +112,9 @@ public class CountryControllerTest {
     @Test
     public void testCantCreateEmptyCountry(){
         String url = serverAddress +"/api/country?name=";
-        String countryName = "";
 
         // Create new country
-        Country country = new Country(countryName);
+        Country country = new Country(emptyCountryName);
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
@@ -191,14 +189,12 @@ public class CountryControllerTest {
     @Test
     public void testCantDeleteNonExistingCountry() {
 
-        long id = 30;
-
         // Check that country doesn't exists
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ id, String.class);
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ nonExistingID, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
         // Delete country
-        ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+ id,
+        ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+ nonExistingID,
                 HttpMethod.DELETE,
                 HttpEntity.EMPTY,
                 Country.class);
@@ -211,8 +207,7 @@ public class CountryControllerTest {
     public void testUpdateCountry() {
 
         String newName = "Страна1";
-        long id = 1;
-        String url = serverAddress + "/api/country/"+id;
+        String url = serverAddress + "/api/country/"+existingID;
 
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
@@ -241,8 +236,7 @@ public class CountryControllerTest {
     public void testCantUpdateNonExistingCountry() {
 
         String newName = "Страна1";
-        long id = 10;
-        String url = serverAddress + "/api/country/"+id;
+        String url = serverAddress + "/api/country/"+nonExistingID;
 
         // Check that country doesn't exist
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
