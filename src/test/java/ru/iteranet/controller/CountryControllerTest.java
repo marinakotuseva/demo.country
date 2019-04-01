@@ -66,6 +66,7 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(response.getBody(), type);
 
+        assertThat(createdCountry, notNullValue());
         assertThat(createdCountry.getName(), equalTo("Россия"));
     }
 
@@ -105,7 +106,7 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
-        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry, notNullValue());
         assertThat(createdCountry.getName(), equalTo(countryToCreate));
     }
 
@@ -134,7 +135,7 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
-        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry, notNullValue());
         assertThat(createdCountry.getName(), equalTo(countryCantCreateTwoTimes));
 
         // Check that cant create again
@@ -168,7 +169,7 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
-        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry, notNullValue());
         assertThat(createdCountry.getName(), equalTo(countryToDelete));
 
 
@@ -227,6 +228,7 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(responsePut.getBody(), type);
 
+        assertThat(createdCountry, notNullValue());
         assertThat(createdCountry.getName(), equalTo(newName));
 
     }
