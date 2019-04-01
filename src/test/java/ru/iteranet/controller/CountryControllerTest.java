@@ -20,6 +20,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -28,7 +29,10 @@ public class CountryControllerTest {
     @Autowired
     private TestRestTemplate testRestTemplate;
 
-    private String site = "http://localhost:8080";
+    private String serverAddress = "http://localhost:8080";
+    private String countryToDelete = "Грузия_ыаываывпв";
+    private String countryToCreate = "Абхазия_fsdfsdfsdfsd";
+    private String countryCantCreateTwoTimes = "Абхазия_fsdfsdfsdfsd";
 
     @Test
     public void testReadCountries(){
@@ -42,11 +46,10 @@ public class CountryControllerTest {
         List<Country> countryList = new Gson().fromJson(response.getBody(), listType);
 
         assertThat(countryList, hasSize(4));
-
-        Country country1 = countryList.get(0);
-        assertThat(country1.getName(), equalTo("Россия"));
-        Country country2 = countryList.get(1);
-        assertThat(country2.getName(), equalTo("Бразилия"));
+        assertThat(countryList.get(0).getName(), equalTo("Россия"));
+        assertThat(countryList.get(1).getName(), equalTo("Бразилия"));
+        assertThat(countryList.get(2).getName(), equalTo("Франция"));
+        assertThat(countryList.get(3).getName(), equalTo(countryToCreate));
     }
 
     @Test
@@ -76,26 +79,25 @@ public class CountryControllerTest {
     }
     @Test
     public void testCreateCountry(){
-        String url = site+"/api/country?name=";
-        String countryName = "Абхазия";
+        String findByNameURL = serverAddress +"/api/country?name=";
 
         // Check that this country do not exists
         HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
 
         ResponseEntity<String> response = testRestTemplate.exchange(
-                url + countryName,
+                findByNameURL + countryToCreate,
                 HttpMethod.GET,
                 entity,
                 String.class);
 
-        Type listType = new TypeToken<ArrayList<Country>>() {
+        Type listType = new TypeToken<Country>() {
         }.getType();
-        List<Country> countryList = new Gson().fromJson(response.getBody(), listType);
+        Country nullCountry = new Gson().fromJson(response.getBody(), listType);
 
-        assertThat(countryList, hasSize(0));
+        assertThat(nullCountry, equalTo(null));
 
         // Create new country
-        Country country = new Country(countryName);
+        Country country = new Country(countryToCreate);
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
@@ -104,12 +106,13 @@ public class CountryControllerTest {
         }.getType();
         Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
-        assertThat(createdCountry.getName(), equalTo(countryName));
+        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry.getName(), equalTo(countryToCreate));
     }
 
     @Test
     public void testCantCreateEmptyCountry(){
-        String url = site+"/api/country?name=";
+        String url = serverAddress +"/api/country?name=";
         String countryName = "";
 
         // Create new country
@@ -123,50 +126,65 @@ public class CountryControllerTest {
     @Test
     public void testCantCreateCountryTwoTimes(){
 
-        Country country = new Country("Грузия");
-        ResponseEntity<String> response = testRestTemplate.postForEntity("/api/country", country, String.class);
-        assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
+        // Create country
+        Country country = new Country(countryCantCreateTwoTimes);
+        ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
-        ResponseEntity<String> response2 = testRestTemplate.postForEntity("/api/country", country, String.class);
+        assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
 
-        System.out.println(response2);
-        assertThat(response2.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
-    }
-
-    @Test
-    public void testDeleteCountry() {
-
-        long id = 3;
-        int initialAmount;
-
-        // Check that country exists
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ id, String.class);
-        assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
-        // Current amount
-        ResponseEntity<String> responseGetAll = testRestTemplate.getForEntity("/api/country", String.class);
-        Type listType = new TypeToken<ArrayList<Country>>() {
+        Type type = new TypeToken<Country>() {
         }.getType();
-        List<Country> countryList = new Gson().fromJson(responseGetAll.getBody(), listType);
-        initialAmount = countryList.size();
+        Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
+        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry.getName(), equalTo(countryCantCreateTwoTimes));
 
-        // Delete country
-        ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+id,
+        // Check that cant create again
+        ResponseEntity<String> responseAfterCreation2 = testRestTemplate.postForEntity("/api/country", country, String.class);
+        assertThat(responseAfterCreation2.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        // Delete
+        ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+createdCountry.getId(),
                 HttpMethod.DELETE,
                 HttpEntity.EMPTY,
                 Country.class);
 
         assertThat(responseDelete.getStatusCode(), equalTo(HttpStatus.OK));
 
-        ResponseEntity<String> responseAfterDeletion = testRestTemplate.getForEntity("/api/country", String.class);
+        // Check that no longer exists
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ createdCountry.getId(), String.class);
+        assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        assertThat(responseAfterDeletion.getStatusCode(), equalTo(HttpStatus.OK));
+    }
 
-        Type listType2 = new TypeToken<ArrayList<Country>>() {
+    @Test
+    public void testDeleteCountry() {
+
+        // Create country to delete
+        Country country = new Country(countryToDelete);
+        ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
+
+        assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
+
+        Type type = new TypeToken<Country>() {
         }.getType();
-        List<Country> countryListAfterDeletion = new Gson().fromJson(responseAfterDeletion.getBody(), listType2);
+        Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
 
-        assertThat(countryListAfterDeletion, hasSize(initialAmount-1));
+        assertThat(createdCountry.getName(), notNullValue());
+        assertThat(createdCountry.getName(), equalTo(countryToDelete));
+
+
+        // Delete
+        ResponseEntity<Country> responseDelete = testRestTemplate.exchange("/api/country/"+createdCountry.getId(),
+                HttpMethod.DELETE,
+                HttpEntity.EMPTY,
+                Country.class);
+
+        assertThat(responseDelete.getStatusCode(), equalTo(HttpStatus.OK));
+
+        // Check that no longer exists
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/"+ createdCountry.getId(), String.class);
+        assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
     }
 
@@ -194,7 +212,7 @@ public class CountryControllerTest {
 
         String newName = "Страна1";
         long id = 1;
-        String url = site + "/api/country/"+id;
+        String url = serverAddress + "/api/country/"+id;
 
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
@@ -207,7 +225,6 @@ public class CountryControllerTest {
 
         ResponseEntity<String> responsePut = testRestTemplate.exchange(url, HttpMethod.PUT, requestUpdate, String.class);
 
-        System.out.println(responsePut);
         assertThat(responsePut.getStatusCode(), equalTo(HttpStatus.OK));
 
         // Check new name
@@ -225,7 +242,7 @@ public class CountryControllerTest {
 
         String newName = "Страна1";
         long id = 10;
-        String url = site + "/api/country/"+id;
+        String url = serverAddress + "/api/country/"+id;
 
         // Check that country doesn't exist
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
@@ -238,7 +255,6 @@ public class CountryControllerTest {
 
         ResponseEntity<String> responsePut = testRestTemplate.exchange(url, HttpMethod.PUT, requestUpdate, String.class);
 
-        System.out.println(responsePut);
         assertThat(responsePut.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
     }
@@ -246,7 +262,7 @@ public class CountryControllerTest {
 
     @Test
     public void testFindCountryByName() {
-        String url = site + "/api/country?name=";
+        String url = serverAddress + "/api/country?name=";
         String countryToFind = "Россия";
 
         HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
@@ -257,11 +273,11 @@ public class CountryControllerTest {
                 entity,
                 String.class);
 
-        Type listType = new TypeToken<ArrayList<Country>>() {
+        Type listType = new TypeToken<Country>() {
         }.getType();
-        List<Country> countryList = new Gson().fromJson(response.getBody(), listType);
+        Country foundCountry = new Gson().fromJson(response.getBody(), listType);
 
-        assertThat(countryList, hasSize(1));
-        assertThat(countryList.get(0).getName(), equalTo(countryToFind));
+        assertThat(foundCountry, notNullValue());
+        assertThat(foundCountry.getName(), equalTo(countryToFind));
     }
 }

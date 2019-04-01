@@ -3,34 +3,39 @@ package ru.iteranet.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.iteranet.entity.Country;
-import ru.iteranet.exceptions.NameNotFoundException;
+import ru.iteranet.exceptions.IncorrectName;
 import ru.iteranet.exceptions.RecordAlreadyExistsException;
 import ru.iteranet.exceptions.RecordNotFoundException;
 import ru.iteranet.repo.CountryRepository;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping(path = "/api")
 public class CountryController {
 
+    private CountryRepository countryRepository;
+
     @Autowired
-    private CountryRepository repository;
+    public CountryController(CountryRepository repository) {
+        this.countryRepository = repository;
+    }
 
     @GetMapping("/country")
-    public List<Country> findAll(@RequestParam(required = false) String name) {
-        System.out.println(name);
-        if (name == null){
-            return repository.findAll();
-        } else {
-            List<Country> loadedCountries = repository.findByName(name);
-            return loadedCountries;
-        }
+    public List<Country> findAll(String name) {
+        return countryRepository.findAll();
+    }
+
+    @GetMapping(value = "/country", params = "name")
+    public Country findByName(@RequestParam(required = true) String name) {
+        Country loadedCountry = countryRepository.findByName(name);
+        return loadedCountry;
     }
 
     @GetMapping("/country/{id}")
     public Country findOne(@PathVariable Long id) {
-        return repository.findById(id)
+        return countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
     }
 
@@ -38,33 +43,31 @@ public class CountryController {
     public Country create(@RequestBody Country country) {
         String name = country.getName();
         if (name == null || name == "") {
-            throw new NameNotFoundException();
+            throw new IncorrectName();
         }
-        List<Country> existingCountries = repository.findByName(name);
-        if (existingCountries.size() != 0) {
+        Country existingCountry = countryRepository.findByName(name);
+        if (existingCountry != null) {
             throw new RecordAlreadyExistsException(name);
         }
-        return repository.save(country);
+        return countryRepository.save(country);
     }
 
     // Save or update
     @PutMapping("/country/{id}")
     public Country saveOrUpdate(@RequestBody Country country, @PathVariable Long id) {
-        Country existingCountry = repository.findById(id)
+        Country existingCountry = countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
-        if (existingCountry.getName() != country.getName()) {
-            existingCountry.setName(country.getName());
-            repository.save(existingCountry);
-        }
+        existingCountry.setName(country.getName());
+        countryRepository.save(existingCountry);
         return existingCountry;
     }
 
     @DeleteMapping("/country/{id}")
     public void delete(@PathVariable Long id) {
-        Country existingCountry = repository
+        countryRepository
                 .findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
 
-        repository.deleteById(id);
+        countryRepository.deleteById(id);
     }
 }

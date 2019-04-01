@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface CountryRepository extends JpaRepository<Country, Long> {
 
-    List<Country> findByName(String name);
+    Country findByName(String name);
 }
 

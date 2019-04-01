@@ -12,9 +12,11 @@ import ru.iteranet.exceptions.RecordAlreadyExistsException;
 import ru.iteranet.exceptions.RecordNotFoundException;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 @RunWith(SpringRunner.class)
 @DataJpaTest
@@ -49,36 +51,40 @@ public class CountryRepositoryTest {
 
     @Test
     public void testCreateCountry() {
+        String countryToCreate = "Абхазия_fsdfsdfsdfsd";
 
         List<Country> countries = repository.findAll();
-        List<Country> emptyList = repository.findByName("Абхазия");
+        Country nullCountry = repository.findByName(countryToCreate);
         assertThat(countries.size(), equalTo(3));
-        assertThat(emptyList.size(), equalTo(0));
+        assertThat(nullCountry, equalTo(null));
 
-        Country country = new Country("Абхазия");
-        List<Country> existingCountry = repository.findByName(country.getName());
-        // TODO
-//        if (existingCountry.size() != 0) {
-//            throw new RecordAlreadyExistsException(country.getName());
-//        }
+        Country country = new Country(countryToCreate);
         repository.save(country);
 
         List<Country> countriesAfterAdding = repository.findAll();
+        Country createdCountry = repository.findByName(countryToCreate);
         assertThat(countriesAfterAdding.size(), equalTo(4));
-
+        assertThat(createdCountry, notNullValue());
     }
 
-    @Test
+    @Test(expected = RecordNotFoundException.class)
     public void testDeleteCountry() {
 
-        List<Country> countries = repository.findAll();
-        assertThat(countries.size(), equalTo(3));
+        String countryToDelete = "Грузия_ыаываывпв";
 
-        repository.delete(repository.findAll().get(2));
+        // Create country to delete
+        Country country = new Country(countryToDelete);
+        repository.save(country);
+        Country createdCountry = repository.findByName(countryToDelete);
+        assertThat(createdCountry, notNullValue());
 
-        List<Country> countriesAfterDeletion = repository.findAll();
-        assertThat(countriesAfterDeletion.size(), equalTo(2));
+        // Delete
+        repository.delete(createdCountry);
 
+        // Check that no longer exists
+        Country deletedCountry = repository
+                .findById(createdCountry.getId())
+                .orElseThrow(() -> new RecordNotFoundException(createdCountry.getId()));
     }
 
     @Test
@@ -100,9 +106,9 @@ public class CountryRepositoryTest {
     @Test
     public void testFindCountryByName() {
 
-        List<Country> countriesRussia = repository.findByName("Россия");
+        Country russiaCountry = repository.findByName("Россия");
 
-        assertThat(countriesRussia.size(), equalTo(1));
-        assertThat(countriesRussia.get(0).getName(), equalTo("Россия"));
+        assertThat(russiaCountry, notNullValue());
+        assertThat(russiaCountry.getName(), equalTo("Россия"));
     }
 }
