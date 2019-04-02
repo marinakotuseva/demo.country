@@ -3,13 +3,12 @@ package ru.iteranet.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.iteranet.entity.Country;
-import ru.iteranet.exceptions.IncorrectName;
+import ru.iteranet.exceptions.IncorrectNameException;
 import ru.iteranet.exceptions.RecordAlreadyExistsException;
 import ru.iteranet.exceptions.RecordNotFoundException;
 import ru.iteranet.repo.CountryRepository;
 
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @RequestMapping(path = "/api")
@@ -23,14 +22,13 @@ public class CountryController {
     }
 
     @GetMapping("/country")
-    public List<Country> findAll(String name) {
+    public List<Country> findAll() {
         return countryRepository.findAll();
     }
 
     @GetMapping(value = "/country", params = "name")
-    public Country findByName(@RequestParam(required = true) String name) {
-        Country loadedCountry = countryRepository.findByName(name);
-        return loadedCountry;
+    public Country findByName(@RequestParam String name) {
+        return countryRepository.findByName(name);
     }
 
     @GetMapping("/country/{id}")
@@ -43,7 +41,7 @@ public class CountryController {
     public Country create(@RequestBody Country country) {
         String name = country.getName();
         if (name == null || name == "") {
-            throw new IncorrectName();
+            throw new IncorrectNameException();
         }
         Country existingCountry = countryRepository.findByName(name);
         if (existingCountry != null) {
@@ -54,7 +52,7 @@ public class CountryController {
 
     // Save or update
     @PutMapping("/country/{id}")
-    public Country saveOrUpdate(@RequestBody Country country, @PathVariable Long id) {
+    public Country update(@RequestBody Country country, @PathVariable Long id) {
         Country existingCountry = countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
         existingCountry.setName(country.getName());
@@ -64,8 +62,7 @@ public class CountryController {
 
     @DeleteMapping("/country/{id}")
     public void delete(@PathVariable Long id) {
-        countryRepository
-                .findById(id)
+        countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
 
         countryRepository.deleteById(id);
