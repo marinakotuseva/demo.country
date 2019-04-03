@@ -3,18 +3,17 @@ package ru.iteranet.entity;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
 @Table(name="countries")
 public class Country {
-    // ID 1-3 prefilled with test data
-    private static final AtomicInteger count = new AtomicInteger(3);
+
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(length=255,unique=true)
     @NotNull
+    @Column(length=255,unique=true)
     private String name;
 
 
@@ -23,7 +22,6 @@ public class Country {
 
     public Country (String name){
         this.name = name;
-        id = count.incrementAndGet();
     }
 
     public long getId() {

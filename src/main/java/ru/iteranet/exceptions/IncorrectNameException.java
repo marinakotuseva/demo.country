@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
 public class IncorrectNameException extends RuntimeException {
     public IncorrectNameException(){
-        super("Имя не заполнено");
+        super("Неправильно заполнено имя");
     }
 }

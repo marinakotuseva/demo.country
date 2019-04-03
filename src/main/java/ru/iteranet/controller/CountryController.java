@@ -28,6 +28,9 @@ public class CountryController {
 
     @GetMapping(value = "/country", params = "name")
     public Country findByName(@RequestParam String name) {
+        if (name == null){
+            throw new IncorrectNameException();
+        }
         return countryRepository.findByName(name);
     }
 
@@ -50,7 +53,7 @@ public class CountryController {
         return countryRepository.save(country);
     }
 
-    // Save or update
+    // Update
     @PutMapping("/country/{id}")
     public Country update(@RequestBody Country country, @PathVariable Long id) {
         Country existingCountry = countryRepository.findById(id)
