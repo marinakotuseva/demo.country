@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -214,22 +215,28 @@ public class CountryControllerTest {
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
-
-        // Update country
-        Country country = new Country(countryName);
-        HttpHeaders headers = new HttpHeaders();
-        HttpEntity<Country> requestUpdate = new HttpEntity<>(country, headers);
-
-        ResponseEntity<String> responsePut = testRestTemplate.exchange(url, HttpMethod.PUT, requestUpdate, String.class);
-
-        assertThat(responsePut.getStatusCode(), equalTo(HttpStatus.OK));
-
-        // Check new name
         Type type = new TypeToken<Country>() {
         }.getType();
-        Country createdCountry = new Gson().fromJson(responsePut.getBody(), type);
+        Country foundCountry = new Gson().fromJson(response.getBody(), type);
+        String oldName = foundCountry.getName();
+        assertThat(oldName, not(equalTo(countryName)));
 
-        assertThat(createdCountry.getName(), equalTo(country.getName()));
+        // Update found country
+        foundCountry.setName(countryName);
+
+        ResponseEntity<String> responseAfterEditing = testRestTemplate.postForEntity("/api/country/"+id, foundCountry, String.class);
+
+        assertThat(responseAfterEditing.getStatusCode(), equalTo(HttpStatus.OK));
+
+        Type type2 = new TypeToken<Country>() {
+        }.getType();
+        Country editedCountry = new Gson().fromJson(responseAfterEditing.getBody(), type2);
+        assertThat(editedCountry.getName(), equalTo(foundCountry.getName()));
+
+        // Change back
+        ResponseEntity<String> responseAfterEditing2 = testRestTemplate.postForEntity("/api/country/"+id, foundCountry, String.class);
+
+        assertThat(responseAfterEditing2.getStatusCode(), equalTo(HttpStatus.OK));
 
     }
 
@@ -246,12 +253,9 @@ public class CountryControllerTest {
 
         // Update country
         Country country = new Country(countryName);
-        HttpHeaders headers = new HttpHeaders();
-        HttpEntity<Country> requestUpdate = new HttpEntity<>(country, headers);
+        ResponseEntity<String> responseAfterEditing = testRestTemplate.postForEntity("/api/country/"+id, country, String.class);
 
-        ResponseEntity<String> responsePut = testRestTemplate.exchange(url, HttpMethod.PUT, requestUpdate, String.class);
-
-        assertThat(responsePut.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
+        assertThat(responseAfterEditing.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
     }
 

@@ -96,9 +96,11 @@ public class CountryRepositoryTest {
         Country country = countryRepository.findAll().get(0);
         assertThat(country.getName(), IsNot.not(countryName));
         country.setName(countryName);
+        countryRepository.save(country);
 
         // Check that amount not changed but name changed
-        assertThat(countries, hasSize(3));
+        List<Country> countriesAfterUpdate = countryRepository.findAll();
+        assertThat(countriesAfterUpdate, hasSize(3));
 
         assertThat(countries.get(0).getName(), equalTo(countryName));
 
