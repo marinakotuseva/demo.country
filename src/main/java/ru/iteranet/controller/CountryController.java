@@ -21,13 +21,11 @@ public class CountryController {
         this.countryRepository = repository;
     }
 
-    // Read all
     @GetMapping("/country")
     public List<Country> findAll() {
         return countryRepository.findAll();
     }
 
-    // Find by name
     @GetMapping(value = "/country", params = "name")
     public Country findByName(@RequestParam String name) {
         if (name == null){
@@ -36,18 +34,16 @@ public class CountryController {
         return countryRepository.findByName(name);
     }
 
-    // Fund by id
     @GetMapping("/country/{id}")
-    public Country findByID(@PathVariable Long id) {
+    public Country findById(@PathVariable Long id) {
         return countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
     }
 
-    // Create new
     @PostMapping("/country")
     public Country create(@RequestBody Country country) {
         String name = country.getName();
-        if (name == null || name == "") {
+        if (name == null || name.equals("")) {
             throw new IncorrectNameException();
         }
         Country existingCountry = countryRepository.findByName(name);
@@ -57,17 +53,14 @@ public class CountryController {
         return countryRepository.save(country);
     }
 
-    // Update
     @PostMapping("/country/{id}")
     public Country update(@RequestBody Country country, @PathVariable Long id) {
         Country existingCountry = countryRepository.findById(id)
                 .orElseThrow(() -> new RecordNotFoundException(id));
         existingCountry.setName(country.getName());
-        countryRepository.save(existingCountry);
-        return existingCountry;
+        return countryRepository.save(existingCountry);
     }
 
-    // Delete
     @DeleteMapping("/country/{id}")
     public void delete(@PathVariable Long id) {
         countryRepository.findById(id)

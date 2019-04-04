@@ -10,6 +10,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.iteranet.entity.Country;
+import ru.iteranet.exceptions.NotSupportedClassExceptions;
+import ru.iteranet.utils.CommonUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class CountryControllerTest {
+
     @Autowired
     private TestRestTemplate testRestTemplate;
 
@@ -49,32 +52,25 @@ public class CountryControllerTest {
     }
 
     @Test
-    public void testFindCountryByID() {
-        String countryName = "Россия";
-        long id = 1;
+    public void testFindCountryById() throws NotSupportedClassExceptions {
 
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/" + id, String.class);
-
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/1", String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Type type = new TypeToken<Country>() {
-        }.getType();
-        Country foundCountry = new Gson().fromJson(response.getBody(), type);
-
-        assertThat(foundCountry.getName(), equalTo(countryName));
+        Country foundCountry = CommonUtils.responseToObject(Country.class, response);
+        assertThat(foundCountry.getName(), equalTo("Россия"));
     }
 
     @Test
-    public void testCantFindNonExistingCountryByID() {
-        long id = 0;
+    public void testCantFindNonExistingCountryById() {
 
-        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/" + id, String.class);
+        ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/0", String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
-
     }
 
     @Test
-    public void testCreateCountry() {
+    public void testCreateCountry() throws NotSupportedClassExceptions {
+
         String countryName = "Страна_для_создания";
 
         // Check that this country do not exists
@@ -85,22 +81,14 @@ public class CountryControllerTest {
                 HttpMethod.GET,
                 entity,
                 String.class);
-
-        Type listType = new TypeToken<Country>() {
-        }.getType();
-        Country nonExistingCountry = new Gson().fromJson(response.getBody(), listType);
-
-        assertThat(nonExistingCountry, nullValue());
+        assertThat(response.getBody(), nullValue());
 
         // Create new country
         Country country = new Country(countryName);
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
-
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Type type = new TypeToken<Country>() {
-        }.getType();
-        Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
+        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
         // Delete created country
@@ -110,34 +98,28 @@ public class CountryControllerTest {
                 Country.class);
 
         assertThat(responseDelete.getStatusCode(), equalTo(HttpStatus.OK));
-
     }
 
     @Test
     public void testCantCreateEmptyCountry() {
-        String countryName = "";
 
         // Create new country
-        Country country = new Country(countryName);
+        Country country = new Country("");
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
-
     }
 
     @Test
-    public void testCantCreateCountryTwoTimes() {
-        String countryName = "Страна_повторное_создание";
+    public void testCantCreateCountryTwoTimes() throws NotSupportedClassExceptions {
 
         // Create country
-        Country country = new Country(countryName);
+        Country country = new Country("Страна_повторное_создание");
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
+        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
 
-        Type type = new TypeToken<Country>() {
-        }.getType();
-        Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
         // Check that cant create again
@@ -155,21 +137,17 @@ public class CountryControllerTest {
         // Check that no longer exists
         ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/" + createdCountry.getId(), String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
-
     }
 
     @Test
-    public void testDeleteCountry() {
-        String countryName = "Страна_для_удаления";
+    public void testDeleteCountry() throws NotSupportedClassExceptions {
 
         // Create country to delete
-        Country country = new Country(countryName);
+        Country country = new Country("Страна_для_удаления");
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Type type = new TypeToken<Country>() {
-        }.getType();
-        Country createdCountry = new Gson().fromJson(responseAfterCreation.getBody(), type);
+        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
 
@@ -206,7 +184,8 @@ public class CountryControllerTest {
     }
 
     @Test
-    public void testUpdateCountry() {
+    public void testUpdateCountry() throws NotSupportedClassExceptions {
+
         long id = 1;
 
         String url = serverAddress + "/api/country/" + id;
@@ -215,26 +194,21 @@ public class CountryControllerTest {
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
-        Type type = new TypeToken<Country>() {
-        }.getType();
-        Country foundCountry = new Gson().fromJson(response.getBody(), type);
-        String oldName = foundCountry.getName();
-        assertThat(oldName, not(equalTo(countryName)));
+        Country existingCountry = CommonUtils.responseToObject(Country.class, response);
+        assertThat(existingCountry.getName(), not(equalTo(countryName)));
 
         // Update found country
-        foundCountry.setName(countryName);
+        existingCountry.setName(countryName);
 
-        ResponseEntity<String> responseAfterEditing = testRestTemplate.postForEntity("/api/country/"+id, foundCountry, String.class);
+        ResponseEntity<String> responseAfterEditing = testRestTemplate.postForEntity("/api/country/"+id, existingCountry, String.class);
 
         assertThat(responseAfterEditing.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Type type2 = new TypeToken<Country>() {
-        }.getType();
-        Country editedCountry = new Gson().fromJson(responseAfterEditing.getBody(), type2);
-        assertThat(editedCountry.getName(), equalTo(foundCountry.getName()));
+        Country editedCountry = CommonUtils.responseToObject(Country.class, responseAfterEditing);
+        assertThat(editedCountry.getName(), equalTo(existingCountry.getName()));
 
         // Change back
-        ResponseEntity<String> responseAfterEditing2 = testRestTemplate.postForEntity("/api/country/"+id, foundCountry, String.class);
+        ResponseEntity<String> responseAfterEditing2 = testRestTemplate.postForEntity("/api/country/"+id, existingCountry, String.class);
 
         assertThat(responseAfterEditing2.getStatusCode(), equalTo(HttpStatus.OK));
 
@@ -243,7 +217,7 @@ public class CountryControllerTest {
 
     @Test
     public void testCantUpdateNonExistingCountry() {
-        String countryName = "Россия";
+
         long id = 0;
         String url = serverAddress + "/api/country/" + id;
 
@@ -252,31 +226,26 @@ public class CountryControllerTest {
         assertThat(response.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
 
         // Update country
-        Country country = new Country(countryName);
+        Country country = new Country("Россия");
         ResponseEntity<String> responseAfterEditing = testRestTemplate.postForEntity("/api/country/"+id, country, String.class);
 
         assertThat(responseAfterEditing.getStatusCode(), equalTo(HttpStatus.INTERNAL_SERVER_ERROR));
-
     }
 
 
     @Test
-    public void testFindCountryByName() {
-        String countryName = "Россия";
+    public void testFindCountryByName() throws NotSupportedClassExceptions {
 
         HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
 
         ResponseEntity<String> response = testRestTemplate.exchange(
-                serverAddress + "/api/country?name=" + countryName,
+                serverAddress + "/api/country?name=" + "Россия",
                 HttpMethod.GET,
                 entity,
                 String.class);
 
-        Type listType = new TypeToken<Country>() {
-        }.getType();
-        Country foundCountry = new Gson().fromJson(response.getBody(), listType);
+        Country foundCountry = CommonUtils.responseToObject(Country.class, response);
 
-        assertThat(foundCountry, notNullValue());
-        assertThat(foundCountry.getName(), equalTo(countryName));
+        assertThat(foundCountry.getId(), equalTo((long)1));
     }
 }
