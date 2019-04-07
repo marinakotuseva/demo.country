@@ -57,7 +57,7 @@ public class CountryControllerTest {
         ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country/1", String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Country foundCountry = CommonUtils.responseToObject(Country.class, response);
+        Country foundCountry = CommonUtils.responseAs(response, Country.class);
         assertThat(foundCountry.getName(), equalTo("Россия"));
     }
 
@@ -86,7 +86,7 @@ public class CountryControllerTest {
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
+        Country createdCountry = CommonUtils.responseAs(responseAfterCreation,Country.class);
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
         // Delete created country
@@ -124,7 +124,7 @@ public class CountryControllerTest {
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
 
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
-        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
+        Country createdCountry = CommonUtils.responseAs(responseAfterCreation,Country.class);
 
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
@@ -153,7 +153,7 @@ public class CountryControllerTest {
         ResponseEntity<String> responseAfterCreation = testRestTemplate.postForEntity("/api/country", country, String.class);
         assertThat(responseAfterCreation.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Country createdCountry = CommonUtils.responseToObject(Country.class, responseAfterCreation);
+        Country createdCountry = CommonUtils.responseAs(responseAfterCreation,Country.class);
         assertThat(createdCountry.getName(), equalTo(country.getName()));
 
 
@@ -200,7 +200,7 @@ public class CountryControllerTest {
         // Check that country exists
         ResponseEntity<String> response = testRestTemplate.getForEntity(url, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
-        Country existingCountry = CommonUtils.responseToObject(Country.class, response);
+        Country existingCountry = CommonUtils.responseAs(response, Country.class);
         assertThat(existingCountry.getName(), not(equalTo(countryName)));
 
         // Update found country
@@ -210,7 +210,7 @@ public class CountryControllerTest {
 
         assertThat(responseAfterEditing.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Country editedCountry = CommonUtils.responseToObject(Country.class, responseAfterEditing);
+        Country editedCountry = CommonUtils.responseAs(responseAfterEditing, Country.class);
         assertThat(editedCountry.getName(), equalTo(existingCountry.getName()));
 
         // Change back
@@ -248,7 +248,7 @@ public class CountryControllerTest {
                 HttpEntity.EMPTY,
                 String.class);
 
-        Country foundCountry = CommonUtils.responseToObject(Country.class, response);
+        Country foundCountry = CommonUtils.responseAs(response, Country.class);
 
         assertThat(foundCountry.getId(), equalTo(1L));
     }
