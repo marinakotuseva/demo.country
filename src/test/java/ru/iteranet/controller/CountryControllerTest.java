@@ -19,9 +19,9 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 
 @RunWith(SpringRunner.class)
@@ -43,12 +43,12 @@ public class CountryControllerTest {
 
         Type listType = new TypeToken<ArrayList<Country>>() {
         }.getType();
-        List<Country> countryList = new Gson().fromJson(response.getBody(), listType);
+        List<Country> countries = new Gson().fromJson(response.getBody(), listType);
 
-        assertThat(countryList, hasSize(3));
-        assertThat(countryList.get(0).getName(), equalTo("Россия"));
-        assertThat(countryList.get(1).getName(), equalTo("Бразилия"));
-        assertThat(countryList.get(2).getName(), equalTo("Франция"));
+        assertThat(countries.size(), greaterThanOrEqualTo(3));
+        assertThat(countries.get(0).getName(), equalTo("Россия"));
+        assertThat(countries.get(1).getName(), equalTo("Бразилия"));
+        assertThat(countries.get(2).getName(), equalTo("Франция"));
     }
 
     @Test
@@ -74,12 +74,10 @@ public class CountryControllerTest {
         String countryName = "Страна_для_создания";
 
         // Check that this country do not exists
-        HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
-
         ResponseEntity<String> response = testRestTemplate.exchange(
                 serverAddress + "/api/country?name=" + countryName,
                 HttpMethod.GET,
-                entity,
+                HttpEntity.EMPTY,
                 String.class);
         assertThat(response.getBody(), nullValue());
 
@@ -98,6 +96,14 @@ public class CountryControllerTest {
                 Country.class);
 
         assertThat(responseDelete.getStatusCode(), equalTo(HttpStatus.OK));
+
+        // Check that no longer exists
+        ResponseEntity<String> response2 = testRestTemplate.exchange(
+                serverAddress + "/api/country?name=" + countryName,
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                String.class);
+        assertThat(response2.getBody(), nullValue());
     }
 
     @Test
@@ -236,16 +242,14 @@ public class CountryControllerTest {
     @Test
     public void testFindCountryByName() throws NotSupportedClassExceptions {
 
-        HttpEntity<?> entity = new HttpEntity<>(new HttpHeaders());
-
         ResponseEntity<String> response = testRestTemplate.exchange(
                 serverAddress + "/api/country?name=" + "Россия",
                 HttpMethod.GET,
-                entity,
+                HttpEntity.EMPTY,
                 String.class);
 
         Country foundCountry = CommonUtils.responseToObject(Country.class, response);
 
-        assertThat(foundCountry.getId(), equalTo((long)1));
+        assertThat(foundCountry.getId(), equalTo(1L));
     }
 }

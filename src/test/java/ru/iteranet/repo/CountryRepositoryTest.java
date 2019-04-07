@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 
 @RunWith(SpringRunner.class)
@@ -28,43 +29,45 @@ public class CountryRepositoryTest {
 
         // Read all countries
         List<Country> allCountries = countryRepository.findAll();
-        assertThat(allCountries.size(), equalTo(3));
+        assertThat(allCountries.size(), greaterThanOrEqualTo(3));
         assertThat(allCountries.get(0).getName(), equalTo("Россия"));
         assertThat(allCountries.get(1).getName(), equalTo("Бразилия"));
         assertThat(allCountries.get(2).getName(), equalTo("Франция"));
+        int initialCountrySize = allCountries.size();
 
         // Find country by ID
-        Country country = countryRepository.findById((long)1).get();
+        Country country = countryRepository.findById(1L).get();
         assertThat(country.getName(), equalTo("Россия"));
 
         // Find country by name
         Country russiaCountry = countryRepository.findByName("Россия");
-        assertThat(russiaCountry.getId(), equalTo((long)1));
+        assertThat(russiaCountry.getId(), equalTo(1L));
 
         // Create new country
+        Country newCountry = new Country(countryName);
         // Check that not exists
-        assertThat(allCountries.contains(countryName), equalTo(false));
+        assertThat(allCountries.contains(newCountry), equalTo(false));
         // Add country
-        Country createdCountry = countryRepository.save(new Country(countryName));
-        assertThat(createdCountry.getName(), equalTo(countryName));
+        Country createdCountry = countryRepository.save(newCountry);
+        assertThat(createdCountry.getName(), equalTo(newCountry.getName()));
         // Check new amount
         List<Country> countriesAfterAdding = countryRepository.findAll();
-        assertThat(countriesAfterAdding, hasSize(4));
-
+        assertThat(countriesAfterAdding, hasSize(initialCountrySize+1));
+        assertThat(countriesAfterAdding.contains(createdCountry), equalTo(true));
 
         // Update added country
         createdCountry.setName(newCountryName);
-        countryRepository.save(createdCountry);
+        Country countryAfterUpdate = countryRepository.save(createdCountry);
 
         // Check that amount not changed but name changed
         List<Country> countriesAfterUpdate = countryRepository.findAll();
-        assertThat(countriesAfterUpdate, hasSize(4));
-        assertThat(countriesAfterUpdate.get(3).getName(), equalTo(newCountryName));
+        assertThat(countriesAfterUpdate, hasSize(initialCountrySize+1));
+        assertThat(countriesAfterUpdate.contains(countryAfterUpdate), equalTo(true));
 
         // Delete updated country
         countryRepository.delete(createdCountry);
 
         // Check that no longer exists
-        assertThat(countryRepository.findAll().contains(createdCountry.getName()), equalTo(false));
+        assertThat(countryRepository.findAll().contains(countryAfterUpdate), equalTo(false));
     }
 }
