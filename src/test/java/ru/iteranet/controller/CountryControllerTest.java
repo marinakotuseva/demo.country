@@ -7,7 +7,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.iteranet.entity.Country;
 import ru.iteranet.exceptions.NotSupportedClassExceptions;
@@ -18,10 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsNull.nullValue;
 
 @RunWith(SpringRunner.class)
@@ -38,17 +38,14 @@ public class CountryControllerTest {
     public void testFindAllCountries() {
 
         ResponseEntity<String> response = testRestTemplate.getForEntity("/api/country", String.class);
-
         assertThat(response.getStatusCode(), equalTo(HttpStatus.OK));
 
-        Type listType = new TypeToken<ArrayList<Country>>() {
-        }.getType();
-        List<Country> countries = new Gson().fromJson(response.getBody(), listType);
+        List<Object> countries = CommonUtils.responseAsList(response, Country[].class);
 
         assertThat(countries.size(), greaterThanOrEqualTo(3));
-        assertThat(countries.get(0).getName(), equalTo("Россия"));
-        assertThat(countries.get(1).getName(), equalTo("Бразилия"));
-        assertThat(countries.get(2).getName(), equalTo("Франция"));
+        assertThat(((Country)countries.get(0)).getName(), equalTo("Россия"));
+        assertThat(((Country)countries.get(1)).getName(), equalTo("Бразилия"));
+        assertThat(((Country)countries.get(2)).getName(), equalTo("Франция"));
     }
 
     @Test
